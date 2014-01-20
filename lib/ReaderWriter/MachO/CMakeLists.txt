@@ -5,6 +5,7 @@ add_lld_library(lldMachO
   MachONormalizedFileFromAtoms.cpp
   MachONormalizedFileToAtoms.cpp
   MachONormalizedFileYAML.cpp
+  Reader.cpp
   ReferenceKinds.cpp
   WriterMachO.cpp
   )

@@ -17,6 +17,7 @@ def execute : Flag<["-"], "execute">,
                 HelpText<"Create main executable (default)">, Group<grp_kind>;
 def preload : Flag<["-"], "preload">,
                 HelpText<"Create preload">, Group<grp_kind>;
+def yaml : Flag<["-"], "yaml">, HelpText<"Create yaml file">;
 
 // optimizations
 def grp_opts : OptionGroup<"opts">, HelpText<"OPTIMIZATIONS">;

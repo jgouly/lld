@@ -174,7 +174,8 @@ SectionInfo *Util::makeSection(DefinedAtom::ContentType type) {
     return new (_allocator) SectionInfo("__DATA", "__la_symbol_ptr",
                             S_LAZY_SYMBOL_POINTERS);
   case DefinedAtom::typeGOT:
-     return new (_allocator) SectionInfo("__DATA", "__got",
+     /* This is a total hack. */
+     return new (_allocator) SectionInfo("__DATA", "__nl_symbol_ptr",
                             S_NON_LAZY_SYMBOL_POINTERS);
   default:
     llvm_unreachable("TO DO: add support for more sections");
@@ -416,7 +417,17 @@ void Util::appendSection(SectionInfo *si, NormalizedFile &file) {
   normSect->type          = si->type;
   normSect->attributes    = si->attributes;
   normSect->address       = si->address;
-  normSect->alignment     = si->alignment;
+  normSect->alignment = si->alignment;
+  /* Found these by manually inspecting some .dylibs */
+  if (normSect->sectionName == "__text") {
+    normSect->alignment = 4;
+  } else if (normSect->sectionName == "__stubs") {
+    normSect->alignment = 1;
+    normSect->attributes = normSect->attributes | S_ATTR_SOME_INSTRUCTIONS;
+  } else if (normSect->sectionName == "__stub_helper") {
+    normSect->alignment = 2;
+    normSect->attributes = normSect->attributes | S_ATTR_SOME_INSTRUCTIONS;
+  }
   // Record where normalized section is.
   si->normalizedSectionIndex = file.sections.size()-1;
   // Copy content from atoms to content buffer for section.
@@ -508,6 +519,20 @@ bool Util::belongsInGlobalSymbolsSection(const DefinedAtom* atom) {
   return (atom->scope() == Atom::scopeGlobal);
 }
 
+static unsigned getDylibIdx(StringRef dylibPath,
+                            std::vector<DependentDylib> libs) {
+  for (unsigned Idx = 0; Idx < libs.size(); ++Idx) {
+    if (libs[Idx].path == dylibPath) {
+      return Idx;
+    }
+  }
+  return 0;
+}
+
+/* Taken from nlist.h */
+#define SET_LIBRARY_ORDINAL(n_desc, ordinal)                                   \
+  (n_desc) = (((n_desc) & 0x00ff) | (((ordinal) & 0xff) << 8))
+
 void Util::addSymbols(const lld::File &atomFile, NormalizedFile &file) {
   // Mach-O symbol table has three regions: locals, globals, undefs.
 
@@ -567,13 +592,20 @@ void Util::addSymbols(const lld::File &atomFile, NormalizedFile &file) {
     sym.name  = ai.atom->name();
     sym.type  = N_UNDF;
     sym.scope = N_EXT;
-    sym.sect  = 0;
-    sym.desc  = 0;
+    sym.sect = 0;
+    if (const SharedLibraryAtom *atom = dyn_cast<SharedLibraryAtom>(ai.atom)) {
+      SET_LIBRARY_ORDINAL(
+          sym.desc, getDylibIdx(atom->loadName(), file.dependentDylibs) + 1);
+    } else {
+      sym.desc = 0;
+    }
     sym.value = 0;
     _atomToSymbolIndex[ai.atom] = file.undefinedSymbols.size() + start;
     file.undefinedSymbols.push_back(sym);
   }
 }
+
+#undef SET_LIBRARY_ORDINAL
 
 const Atom *Util::targetOfLazyPointer(const DefinedAtom *lpAtom) {
   for (const Reference *ref : *lpAtom) {

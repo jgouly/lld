@@ -300,7 +300,17 @@ void MachOLinkingContext::addPasses(PassManager &pm) {
 
 Writer &MachOLinkingContext::writer() const {
   if (!_writer) {
-    _writer = createWriterMachO(*this);
+    switch (LinkingContext::outputFileType()) {
+    case OutputFileType::Default:
+      _writer = createWriterMachO(*this);
+      break;
+    case OutputFileType::YAML:
+      _writer = createWriterYAML(*this);
+      break;
+    case OutputFileType::Native:
+      llvm_unreachable("Native output not supported!");
+      break;
+    }
   }
   return *_writer;
 }

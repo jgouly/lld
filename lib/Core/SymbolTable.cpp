@@ -231,6 +231,10 @@ void SymbolTable::addByName(const Atom &newAtom) {
     const UndefinedAtom* existingUndef = cast<UndefinedAtom>(existing);
     const UndefinedAtom* newUndef = cast<UndefinedAtom>(&newAtom);
 
+    // FIXME: Why is this necessary?
+    if (existingUndef == newUndef)
+      return;
+
     bool sameCanBeNull = (existingUndef->canBeNull() == newUndef->canBeNull());
     if (!sameCanBeNull &&
         _context.warnIfCoalesableAtomsHaveDifferentCanBeNull()) {

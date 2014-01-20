@@ -23,6 +23,7 @@
 
 #include "MachONormalizedFile.h"
 #include "MachONormalizedFileBinaryUtils.h"
+#include "Reader.h"
 #include "ReferenceKinds.h"
 
 #include "lld/Core/Error.h"
@@ -140,6 +141,8 @@ readBinary(std::unique_ptr<MemoryBuffer> &mb,
 
   bool is64, swap;
   switch (mh->magic) {
+  case llvm::MachO::FAT_CIGAM:
+   assert(0 && "not handled!");
   case llvm::MachO::MH_MAGIC:
     is64 = false;
     swap = false;
@@ -366,6 +369,7 @@ void Registry::addSupportMachOObjects(StringRef archName) {
   }
   add(std::unique_ptr<YamlIOTaggedDocumentHandler>(
                                new mach_o::MachOYamlIOTaggedDocumentHandler()));
+  add(std::unique_ptr<Reader>(new mach_o::MachOReader(arch)));
 }
 
 } // namespace lld

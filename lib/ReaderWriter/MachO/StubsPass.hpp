@@ -32,6 +32,7 @@ public:
     : _context(context)
     , _kindHandler(_context.kindHandler())
     , _file(context)
+    , _binderAtom(nullptr)
     , _helperCommonAtom(nullptr)
     , _helperCacheAtom(nullptr)
     , _helperBinderAtom(nullptr) {
@@ -122,6 +123,10 @@ public:
 
 
   void addStubAtoms(MutableFile &mergedFile) override {
+    // Add sharedlibrary atom
+    if (!_binderAtom)
+      _binderAtom = new StubBinderAtom(_file);
+    mergedFile.addAtom(*_binderAtom);
     // Exit early if no stubs needed.
     if (_targetToStub.empty())
       return;
@@ -141,8 +146,6 @@ public:
     for (const DefinedAtom *lp : _lazyPointers) {
       mergedFile.addAtom(*lp);
     }
-    // Add sharedlibrary atom
-    mergedFile.addAtom(*_binderAtom);
   }
 
 private:

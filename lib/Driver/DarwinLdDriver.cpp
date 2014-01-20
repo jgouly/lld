@@ -133,6 +133,9 @@ bool DarwinLdDriver::parse(int argc, const char *argv[],
     }
   }
 
+  if (llvm::opt::Arg *output_type = parsedArgs->getLastArg(OPT_yaml))
+    ctx.setOutputFileType("yaml");
+
   // Handle -arch xxx
   MachOLinkingContext::Arch arch = MachOLinkingContext::arch_unknown;
   if (llvm::opt::Arg *archStr = parsedArgs->getLastArg(OPT_arch)) {

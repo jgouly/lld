@@ -412,7 +412,8 @@ void MachOFileLayout::buildFileOffsets() {
     for (const Segment &sg : _file.segments) {
       if ((s.address >= sg.address)
                         && (s.address+s.content.size() <= sg.address+sg.size)) {
-        if (!sg.name.equals(s.segmentName)) {
+        /* HACK */
+        if (s.segmentName!="" && !sg.name.equals(s.segmentName)) {
           _ec = llvm::make_error_code(llvm::errc::executable_format_error);
           return;
         }
@@ -458,7 +459,9 @@ void MachOFileLayout::writeMachHeader() {
   mh->filetype = _file.fileType;
   mh->ncmds = _countOfLoadCommands;
   mh->sizeofcmds = _endOfLoadCommands - _startOfLoadCommands;
-  mh->flags = _file.flags;
+  /* This makes tests fail, need to pass this in as-needed. */
+  mh->flags = _file.flags | MH_TWOLEVEL | MH_DYLDLINK | MH_WEAK_DEFINES |
+              MH_BINDS_TO_WEAK | MH_PIE;
   if (_swap)
     swapStruct(*mh);
 }

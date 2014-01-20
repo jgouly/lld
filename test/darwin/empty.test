@@ -1,0 +1,7 @@
+RUN: lld -flavor darwin -arch x86_64 %p/Inputs/empty.x86_64.o -e _main -yaml -o %t
+RUN: FileCheck %s < %t
+
+CHECK: defined-atoms:
+CHECK:   name:            _main
+CHECK:   scope:           global
+CHECK:   content:         [ 55, 48, 89, E5, 31, C0, 5D, C3 ]
